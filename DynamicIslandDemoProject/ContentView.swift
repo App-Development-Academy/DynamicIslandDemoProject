@@ -44,12 +44,10 @@ struct ContentView: View {
     
     private func deleteAllActivities() {
         for item in UserDefaultsManager.fetchActivities() {
-            
-            if let activity = Activity<FoodDeliveryAttributes>.activities.first(where: { $0.contentState.phoneNumber == item.phoneNumber })
-            {
-                    Task {
-                        await LiveActivityManager.endActivity(activity.id)
-                    }
+            if let activity = Activity<FoodDeliveryAttributes>.activities.first(where: { $0.content.state.phoneNumber == item.phoneNumber }) {
+                Task {
+                    await LiveActivityManager.endActivity(activity.id)
+                }
             }
         }
     }

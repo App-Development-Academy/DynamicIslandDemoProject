@@ -14,13 +14,12 @@ class LiveActivityManager {
     static func startActivity(arrivalTime: String, phoneNumber: String, restaurantName: String, customerAddress: String, remainingDistance: String) throws -> String {
        
         var activity: Activity<FoodDeliveryAttributes>?
-        let initialState =  FoodDeliveryAttributes.ContentState(arrivalTime: arrivalTime, phoneNumber: phoneNumber, restaurantName: restaurantName, customerAddress: customerAddress, remainingDistance: remainingDistance)
+        let initialContent = ActivityContent(state: FoodDeliveryAttributes.ContentState(arrivalTime: arrivalTime, phoneNumber: phoneNumber, restaurantName: restaurantName, customerAddress: customerAddress, remainingDistance: remainingDistance), staleDate: nil)
         
         do {
-            activity = try Activity.request(attributes: FoodDeliveryAttributes(), contentState: initialState, pushType: nil)
+            activity = try Activity.request(attributes: FoodDeliveryAttributes(), content: initialContent, pushType: nil)
             
-            guard let id = activity?.id else { throw
-                LiveActivityErrorType.failedToGetID }
+            guard let id = activity?.id else { throw LiveActivityErrorType.failedToGetID }
             return id
         } catch {
             throw error
@@ -33,36 +32,35 @@ class LiveActivityManager {
         return sortedActivities.map {
             [
                 "id": $0.id,
-                "arrivalTime": $0.contentState.arrivalTime,
-                "phoneNumber": $0.contentState.phoneNumber,
-                "restaurantName": $0.contentState.restaurantName,
-                "customerAddress": $0.contentState.customerAddress,
-                "remainingDistance": $0.contentState.remainingDistance
+                "arrivalTime": $0.content.state.arrivalTime,
+                "phoneNumber": $0.content.state.phoneNumber,
+                "restaurantName": $0.content.state.restaurantName,
+                "customerAddress": $0.content.state.customerAddress,
+                "remainingDistance": $0.content.state.remainingDistance
             ]
         }
     }
     
     static func endAllActivities() async {
         for activity in Activity<FoodDeliveryAttributes>.activities {
-            await activity.end(dismissalPolicy: .immediate)
+            await activity.end(nil, dismissalPolicy: .immediate)
         }
     }
     
     static func endActivity(_ id: String) async {
         await Activity<FoodDeliveryAttributes>.activities.first(where: {
             $0.id == id
-        })?.end(dismissalPolicy: .immediate)
+        })?.end(nil, dismissalPolicy: .immediate)
     }
     
-    static func updateActivity(id: String, arrivalTime: String, phoneNumber: String, restaurantName: String, customerAddress: String, remainingDistnace: String) async {
+    static func updateActivity(id: String, arrivalTime: String, phoneNumber: String, restaurantName: String, customerAddress: String, remainingDistance: String) async {
         
-        let updatedContentState = FoodDeliveryAttributes.ContentState(arrivalTime: arrivalTime, phoneNumber: phoneNumber, restaurantName: restaurantName, customerAddress: customerAddress, remainingDistance: remainingDistnace)
+        let updatedContent = ActivityContent(state: FoodDeliveryAttributes.ContentState(arrivalTime: arrivalTime, phoneNumber: phoneNumber, restaurantName: restaurantName, customerAddress: customerAddress, remainingDistance: remainingDistance), staleDate: nil)
         
         let activity = Activity<FoodDeliveryAttributes>.activities.first(where: { $0.id == id })
         
-        await activity?.update(using: updatedContentState)
+        await activity?.update(updatedContent)
     }
-    
 }
 
 enum LiveActivityErrorType: Error {
